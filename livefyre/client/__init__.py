@@ -64,3 +64,13 @@ class Client(Connection):
 
     def ping(self):
         return self.request("/", format="html")
+
+# thread local client.
+__thread_client = threading.local()
+
+def get_client(url, client_id, client_secret):
+    """Return a client for this thread."""
+    key = "_" + hashlib.md5("%s:%s%s" % (url, client_id, client_secret)).hexdigest()
+    if not getattr(__thread_client, key, None):
+        setattr(__thread_client, key, Client(url, client_id, client_secret))
+    return getattr(__thread_client, key)
