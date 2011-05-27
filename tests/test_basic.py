@@ -12,4 +12,5 @@ client = Client(LIVEFYRE_API_ENDPOINT, CLIENT_ID, CLIENT_SECRET)
 
 class TestSimple:
     def testCredentials(self):
-        client.ping()
+        assert 'livefyre' in client.ping()
+        
