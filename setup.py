@@ -17,7 +17,7 @@ setup(
     install_requires = ['httplib2>=0.6.0', 'python-rest-client>=0.3'],
     setup_requires=['nose>=0.11'],
     test_suite = "nose.collector",
-    long_description=read('README'),
+    long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",
