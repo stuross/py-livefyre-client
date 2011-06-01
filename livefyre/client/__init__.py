@@ -102,12 +102,15 @@ class LivefyreClient(Connection):
         if status == '200' and format == 'json':
             try:
                 resp['body'] = json.loads(resp['body'])
-                status = resp['body'].get('code')
-                msg = resp['body'].get('error')
             except ValueError, e:
                 raise RemoteError("Server responded with bad json: %s" % (e, resp['body']))
-            except KeyError:
-                pass
+            
+            if type(resp['body']) == dict:
+                try:
+                    status = resp['body']['code']
+                    msg = resp['body']['error']
+                except KeyError:
+                    pass
 
         if status == '404':
             raise NotFoundError(resource)
