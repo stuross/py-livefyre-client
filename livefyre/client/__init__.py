@@ -3,6 +3,7 @@ from httplib2 import HttpLib2Error
 import threading
 import urllib
 import json
+from .token import LFAuthToken
 
 from logging import getLogger
 
@@ -24,13 +25,14 @@ class LivefyreClient(Connection):
     """A simple client abstraction over python-rest-client:
        http://code.google.com/p/python-rest-client/
     """
-    
-    ROLES = ('owner', 'admin', 'banned', 'bozo', 'whitelist')
-    _ROLE_PLURAL = dict(owner='owners', admin='admins', banned='banned', bozo='bozos', whitelist='whitelist')
-    
-    def __init__(self, domain, actor_token):
-        Connection.__init__(self, "http://%s" % domain)
-        self.actor_token = actor_token
+        
+    def __init__(self, domain, domain_key, endpoint=None, user="system"):
+        if not endpoint:
+            endpoint = "http://%s" % domain
+        Connection.__init__(self, endpoint)
+        self.domain = domain
+        self.domain_key = domain_key
+        self.user = user
         
     def create_site(self, url):
         return self.request("/sites/", "post", dict(url=url))
@@ -40,26 +42,19 @@ class LivefyreClient(Connection):
     
     def add_role(self, role, jid, site_id=None):
         assert role in self.ROLES
-        resource = "/%s/" % role
         if site_id:
-            resource = "/site/%s%s" % (site_id, resource)
+            resource = "/site/%s/%s" % (site_id, self.ROLE_PLURALS[role])
+        else:
+            resource = "/%s/" % role
             
         return self.request(resource, "post", dict(jid=jid))
     
     def remove_role(self, role, jid, site_id=None):
-        assert role in self.ROLES
-        resource = "/%s/%s/" % (role, jid)
-        if site_id:
-            resource = "/site/%s%s" % (site_id, resource)
-
+        resource = self._role_resource_path(role, site_id=site_id, jid=jid)
         return self.request(resource, "post", dict(jid=jid))
     
     def list_users(self, role, site_id=None):
-        assert role in self.ROLES
-        resource = "/%s/" % role
-        if site_id:
-            resource = "/site/%s%s" % (site_id, resource)
-
+        resource = self._role_resource_path(role, site_id=site_id, jid=None)
         return self.request(resource, "get")
     
     def register_profile_url(self, url):
@@ -70,18 +65,38 @@ class LivefyreClient(Connection):
                             dict(id=user_id), 
                             body=json.dumps(user_data),
                             header={'Content-Type':'application/json'})
-                  
-    def request(self, resource, method = "get", args = None, body = None, filename=None, headers={}, format='json'):
-        #new_args = dict(client_id=self.client_id, client_secret=self.client_secret)
-        new_args = dict(actor_token=self.actor_token)
 
+    """Which roles"""
+    ROLES = ('owner', 'admin', 'outcast', 'member')
+    ROLE_PLURALS = dict(owner='owners', admin='admins', outcast='outcasts', member='members')
+                  
+    def _role_resource_path(self, role, jid=None, site_id=None):
+        assert role in self.ROLES
+        resource = []
+        if site_id:
+            resource.append('site')
+            resource.append(site_id)
+        if jid:
+            resource.append(role)
+            resource.append(jid)
+        else:
+            resource.append(self.ROLE_PLURALS[role])
+        
+        return "/" + "/".join(map(str, resource))
+                      
+    def request(self, resource, method = "get", args = None, body = None, filename=None, headers={}, format='json'):
+        new_args = dict(actor_token=self.auth_token)
+        new_headers = dict(Host=self.domain)
+        if headers:
+            new_headers.update(headers)
+            
         LOG.debug("%s: %s?%s headers=%s", 
-                  method, resource, urllib.urlencode(args if args else {}), str(headers))  
+                  method, resource, urllib.urlencode(args if args else {}), str(new_headers))  
 
         if args:
             new_args.update(args)
       
-        resp = Connection.request(self, resource, method=method, args=new_args, body=body, filename=filename, headers=headers)
+        resp = Connection.request(self, resource, method=method, args=new_args, body=body, filename=filename, headers=new_headers)
         status = resp['headers']['status']
         msg = resp['body']
         if status == '200' and format == 'json':
@@ -91,6 +106,8 @@ class LivefyreClient(Connection):
                 msg = resp['body'].get('error')
             except ValueError, e:
                 raise RemoteError("Server responded with bad json: %s" % (e, resp['body']))
+            except KeyError:
+                pass
 
         if status == '404':
             raise NotFoundError(resource)
@@ -105,6 +122,9 @@ class LivefyreClient(Connection):
 
         return resp['body']
 
+    @property
+    def auth_token(self):
+        return LFAuthToken(self.user, self.domain, self.domain_key).token
 
 # thread local client.
 __thread_client = threading.local()
