@@ -20,17 +20,60 @@ class BadRequestError(RemoteError): pass
 
 class AuthenticationError(RemoteError): pass
 
-class Client(Connection):
-    """A simple client connection to a Capture server extending python-rest-client:
+class LivefyreClient(Connection):
+    """A simple client abstraction over python-rest-client:
        http://code.google.com/p/python-rest-client/
     """
-    def __init__(self, url, client_id, client_secret):
-        Connection.__init__(self, url)
-        self.client_id = client_id
-        self.client_secret = client_secret
+    
+    ROLES = ('owner', 'admin', 'banned', 'bozo', 'whitelist')
+    _ROLE_PLURAL = dict(owner='owners', admin='admins', banned='banned', bozo='bozos', whitelist='whitelist')
+    
+    def __init__(self, domain, actor_token):
+        Connection.__init__(self, "http://%s" % domain)
+        self.actor_token = actor_token
+        
+    def create_site(self, url):
+        return self.request("/sites/", "post", dict(url=url))
+    
+    def list_sites(self):
+        return self.request("/sites/", "get")
+    
+    def add_role(self, role, jid, site_id=None):
+        assert role in self.ROLES
+        resource = "/%s/" % role
+        if site_id:
+            resource = "/site/%s%s" % (site_id, resource)
+            
+        return self.request(resource, "post", dict(jid=jid))
+    
+    def remove_role(self, role, jid, site_id=None):
+        assert role in self.ROLES
+        resource = "/%s/%s/" % (role, jid)
+        if site_id:
+            resource = "/site/%s%s" % (site_id, resource)
+
+        return self.request(resource, "post", dict(jid=jid))
+    
+    def list_users(self, role, site_id=None):
+        assert role in self.ROLES
+        resource = "/%s/" % role
+        if site_id:
+            resource = "/site/%s%s" % (site_id, resource)
+
+        return self.request(resource, "get")
+    
+    def register_profile_url(self, url):
+        return self.request("/", "post", dict(pull_profile_url=url))
+    
+    def update_profile(self, user_id, user_data):
+        return self.request("/profiles/", "post", 
+                            dict(id=user_id), 
+                            body=json.dumps(user_data),
+                            header={'Content-Type':'application/json'})
                   
     def request(self, resource, method = "get", args = None, body = None, filename=None, headers={}, format='json'):
-        new_args = dict(client_id=self.client_id, client_secret=self.client_secret)
+        #new_args = dict(client_id=self.client_id, client_secret=self.client_secret)
+        new_args = dict(actor_token=self.actor_token)
 
         LOG.debug("%s: %s?%s headers=%s", 
                   method, resource, urllib.urlencode(args if args else {}), str(headers))  
@@ -62,8 +105,6 @@ class Client(Connection):
 
         return resp['body']
 
-    def ping(self):
-        return self.request("/", format="html")
 
 # thread local client.
 __thread_client = threading.local()
