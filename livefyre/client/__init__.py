@@ -60,6 +60,13 @@ class LivefyreClient(Connection):
     def register_profile_url(self, url):
         return self.request("/", "post", dict(pull_profile_url=url))
     
+    def get_profile_data(self, profile_id):
+        return self.request("/profile/%s/data/" % profile_id, "get")['data']
+    
+    def get_profile_comments(self, profile_id, comment_offset):
+        return self.request("/profile/%s/data/%d/" % (profile_id, comment_offset), "get")['data']
+
+    
     def update_profile(self, user_id, user_data):
         return self.request("/profiles/", "post", 
                             dict(id=user_id), 
@@ -128,13 +135,3 @@ class LivefyreClient(Connection):
     @property
     def auth_token(self):
         return LFAuthToken(self.user, self.domain, self.domain_key).token
-
-# thread local client.
-__thread_client = threading.local()
-
-def get_client(url, client_id, client_secret):
-    """Return a client for this thread."""
-    key = "_" + hashlib.md5("%s:%s%s" % (url, client_id, client_secret)).hexdigest()
-    if not getattr(__thread_client, key, None):
-        setattr(__thread_client, key, Client(url, client_id, client_secret))
-    return getattr(__thread_client, key)
