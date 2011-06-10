@@ -17,6 +17,8 @@ class NotFoundError(RemoteError): pass
 
 class ServerError(RemoteError): pass
 
+class ConnectionError(RemoteError): pass
+
 class BadRequestError(RemoteError): pass
 
 class AuthenticationError(RemoteError): pass
@@ -26,13 +28,14 @@ class LivefyreClient(Connection):
        http://code.google.com/p/python-rest-client/
     """
         
-    def __init__(self, domain, domain_key, endpoint=None, user="system"):
+    def __init__(self, domain, domain_key, endpoint=None, user="system", timeout=5):
         if not endpoint:
             endpoint = "http://%s" % domain
         Connection.__init__(self, endpoint)
         self.domain = domain
         self.domain_key = domain_key
         self.user = user
+        self.timeout=timeout
         
     def create_site(self, url):
         return self.request("/sites/", "post", dict(url=url))
@@ -102,8 +105,14 @@ class LivefyreClient(Connection):
 
         if args:
             new_args.update(args)
-      
-        resp = Connection.request(self, resource, method=method, args=new_args, body=body, filename=filename, headers=new_headers)
+
+        try:
+            resp = Connection.request(self, resource, method=method, args=new_args, body=body, filename=filename, headers=new_headers)
+        except AttributeError, e:
+            # http://code.google.com/p/httplib2/issues/detail?id=152
+            if 'makefile' not in e:
+                raise ConnectionError("Server is unavailable")
+            
         status = resp['headers']['status']
         msg = resp['body']
         if status == '200' and format == 'json':
