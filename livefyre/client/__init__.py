@@ -67,7 +67,7 @@ class LivefyreClient(Connection):
         return self.request("/profile/%s/data/" % profile_id, "get")['data']
     
     def get_profile_comments(self, profile_id, comment_offset):
-        return self.request("/profile/%s/data/%d/" % (profile_id, comment_offset), "get")['data']
+        return self.request("/profile/%s/comments/%d/" % (profile_id, comment_offset), "get")['data']
 
     
     def update_profile(self, user_id, user_data):
