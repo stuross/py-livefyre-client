@@ -64,7 +64,7 @@ class LivefyreClient(Connection):
         return self.request("/", "post", dict(pull_profile_url=url))
     
     def get_profile_data(self, profile_id):
-        return self.request("/profile/%s/data/" % profile_id, "get")['data']
+        return self.request("/profile/%s/" % profile_id, "get")['data']
     
     def get_profile_comments(self, profile_id, comment_offset):
         return self.request("/profile/%s/comments/%d/" % (profile_id, comment_offset), "get")['data']
