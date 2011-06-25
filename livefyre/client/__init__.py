@@ -76,7 +76,7 @@ class LivefyreClient(Connection):
         return self.request("/profiles/", "post",
                             dict(id=user_id),
                             body=json.dumps(user_data),
-                            header={'Content-Type':'application/json'})
+                            headers={'Content-Type':'application/json'})
 
     """Which roles"""
     ROLES = ('owner', 'admin', 'outcast', 'member')
