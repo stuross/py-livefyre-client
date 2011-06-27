@@ -77,6 +77,10 @@ class LivefyreClient(Connection):
                             dict(id=user_id),
                             body=json.dumps(user_data),
                             headers={'Content-Type':'application/json'})
+                            
+    def delete_profile(self, user_id):
+        return self.request("/profile/%s/" % user_id,
+                            "DELETE", )
 
     """Which roles"""
     ROLES = ('owner', 'admin', 'outcast', 'member')
