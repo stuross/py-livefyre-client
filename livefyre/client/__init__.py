@@ -45,8 +45,9 @@ class LivefyreClient(Connection):
     def list_sites(self):
         return self.request("/sites/", "get")
 
-    def add_role(self, role, jid, site_id=None):
+    def add_role(self, role, user_id, site_id=None):
         assert role in self.ROLES
+        jid = "%s@%s" % (user_id, self.domain)
         if site_id:
             resource = "/site/%s/%s" % (site_id, self.ROLE_PLURALS[role])
         else:
@@ -54,7 +55,8 @@ class LivefyreClient(Connection):
 
         return self.request(resource, "post", dict(jid=jid))
 
-    def remove_role(self, role, jid, site_id=None):
+    def remove_role(self, role, user_id, site_id=None):
+        jid = "%s@%s" % (user_id, self.domain)
         resource = self._role_resource_path(role, site_id=site_id, jid=jid)
         return self.request(resource, "post", dict(jid=jid))
 
