@@ -74,9 +74,7 @@ class LivefyreClient(Connection):
 
     def update_profile(self, user_id, user_data):
         return self.request("/profiles/", "post",
-                            dict(id=user_id),
-                            body=json.dumps(user_data),
-                            headers={'Content-Type':'application/json'})
+                            dict(id=user_id, data=json.dumps(user_data)), )
                             
     def delete_profile(self, user_id):
         return self.request("/profile/%s/" % user_id,
