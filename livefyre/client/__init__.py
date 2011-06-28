@@ -46,22 +46,15 @@ class LivefyreClient(Connection):
         return self.request("/sites/", "get")
 
     def add_role(self, role, user_id, site_id=None):
-        assert role in self.ROLES
-        jid = "%s@%s" % (user_id, self.domain)
-        if site_id:
-            resource = "/site/%s/%s" % (site_id, self.ROLE_PLURALS[role])
-        else:
-            resource = "/%s/" % role
-
-        return self.request(resource, "post", dict(jid=jid))
+        resource = self._role_resource_path(role, site_id=site_id, user_id=user_id)
+        return self.request(resource, "get", args={'_method': 'PUT'})
 
     def remove_role(self, role, user_id, site_id=None):
-        jid = "%s@%s" % (user_id, self.domain)
-        resource = self._role_resource_path(role, site_id=site_id, jid=jid)
-        return self.request(resource, "post", dict(jid=jid))
+        resource = self._role_resource_path(role, site_id=site_id, user_id=user_id)
+        return self.request(resource, "get", args={'_method': 'DELETE'})
 
     def list_users(self, role, site_id=None):
-        resource = self._role_resource_path(role, site_id=site_id, jid=None)
+        resource = self._role_resource_path(role, site_id=site_id, user_id=None)
         return self.request(resource, "get")
 
     def register_profile_url(self, url):
@@ -86,19 +79,20 @@ class LivefyreClient(Connection):
     ROLES = ('owner', 'admin', 'outcast', 'member')
     ROLE_PLURALS = dict(owner='owners', admin='admins', outcast='outcasts', member='members')
 
-    def _role_resource_path(self, role, jid=None, site_id=None):
+    def _role_resource_path(self, role, user_id=None, site_id=None):
         assert role in self.ROLES
         resource = []
         if site_id:
             resource.append('site')
             resource.append(site_id)
-        if jid:
+        if user_id:
+            jid = "%s@%s" % (user_id, self.domain)
             resource.append(role)
             resource.append(jid)
         else:
             resource.append(self.ROLE_PLURALS[role])
 
-        return "/" + "/".join(map(str, resource))
+        return "/" + "/".join(map(str, resource)) + "/"
 
     def request(self, resource, method = "get", args = None, body = None, filename=None, headers={}, format='json'):
         new_args = dict(actor_token=self.auth_token)
