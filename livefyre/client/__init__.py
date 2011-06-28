@@ -80,7 +80,7 @@ class LivefyreClient(Connection):
                             
     def delete_profile(self, user_id):
         return self.request("/profile/%s/" % user_id,
-                            "DELETE", )
+                            "GET", args={'_method': 'DELETE'})
 
     """Which roles"""
     ROLES = ('owner', 'admin', 'outcast', 'member')
