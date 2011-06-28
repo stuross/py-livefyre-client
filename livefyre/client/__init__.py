@@ -113,7 +113,7 @@ class LivefyreClient(Connection):
             new_args.update(args)
 
         try:
-            resp = Connection.request(self, resource, method=method, args=new_args, body=body, filename=filename, headers=new_headers)
+            resp = Connection.request(self, resource, method=method.lower(), args=new_args, body=body, filename=filename, headers=new_headers)
         except AttributeError, e:
             # http://code.google.com/p/httplib2/issues/detail?id=152
             if 'makefile' not in e:
