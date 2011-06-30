@@ -3,6 +3,7 @@ from httplib2 import HttpLib2Error
 import threading
 import urllib
 import json
+import datetime, time
 from .token import LFAuthToken
 
 from logging import getLogger
@@ -66,7 +67,6 @@ class LivefyreClient(Connection):
     def get_profile_comments(self, profile_id, comment_offset):
         return self.request("/profile/%s/comments/%d/" % (profile_id, comment_offset), "get")['data']
 
-
     def update_profile(self, user_id, user_data):
         return self.request("/profiles/", "post",
                             dict(id=user_id, data=json.dumps(user_data)), )
@@ -74,6 +74,16 @@ class LivefyreClient(Connection):
     def delete_profile(self, user_id):
         return self.request("/profile/%s/" % user_id,
                             "GET", args={'_method': 'DELETE'})
+        
+    def comment_counts(self, since=None, to=None):
+        since = _convert_to_epoch(since, int(time.mktime((datetime.datetime.now() - datetime.timedelta(hours=24)).utctimetuple())))
+        to = _convert_to_epoch(to, None)
+        
+        args = {'from': since}
+        if to:
+            args['to'] = to
+            
+        return self.request("/conversations/metrics/counts", "get", args)
 
     """Which roles"""
     ROLES = ('owner', 'admin', 'outcast', 'member')
@@ -144,3 +154,16 @@ class LivefyreClient(Connection):
     @property
     def auth_token(self):
         return LFAuthToken(self.user, self.domain, self.domain_key).token
+
+def _convert_to_epoch(v, default=None):
+    ov = v
+    if type(v) in (int, float):
+        v = int(v)
+    elif type(v) == datetime.datetime:
+        v = int(time.mktime(v.utctimetuple()))
+    elif v is None:
+        v = default
+    else:
+        assert False, "Unable to convert object to epoch time %s" % v
+        
+    return v
