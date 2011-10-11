@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "livefyre.client",
-    version = "0.1",
+    version = "0.1.1",
     author = "Nino Walker",
     author_email = "support@livefyre.com",
     description = ("Livefyre API python client."),
