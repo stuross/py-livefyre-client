@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "livefyre.client",
-    version = "0.1.1",
+    version = "0.2",
     author = "Nino Walker",
     author_email = "support@livefyre.com",
     description = ("Livefyre API python client."),
@@ -14,7 +14,11 @@ setup(
     keywords = "documentation client",
     url = "http://github.com/Livefyre/py-livefyre-client",
     packages=['livefyre.client', 'livefyre'],
-    install_requires = ['httplib2>=0.6.0', 'python-rest-client>=0.3'],
+    install_requires = [
+        'httplib2>=0.6.0',
+        'python-rest-client>=0.3',
+        'PyJWT>=0.1.4'
+    ],
     setup_requires=['nose>=0.11'],
     test_suite = "nose.collector",
     long_description=read('README.rst'),
