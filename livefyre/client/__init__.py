@@ -34,7 +34,7 @@ class LivefyreClient(Connection):
     def __init__(self, domain, domain_key, endpoint=None, user="system", timeout=5, cache_dir=".cache"):
         if not endpoint:
             endpoint = "http://%s" % domain
-        Connection.__init__(self, endpoint, cache_dir=cache_dir)
+        Connection.__init__(self, endpoint)
         self.domain = domain
         self.domain_key = domain_key
         self.user = user
